@@ -1,0 +1,42 @@
+<template>
+  <components :is="html" class="markdown-body"></components>
+</template>
+
+<script>
+import MarkdownIt from 'markdown-it'
+import hljs from 'markdown-it-highlightjs'
+import latex from 'markdown-it-katex'
+import emoji from 'markdown-it-emoji'
+import anchor from 'markdown-it-anchor'
+import toc from 'markdown-it-table-of-contents'
+
+export default {
+  name: 'Markdown',
+  props: {
+    content: String
+  },
+  data: () => ({
+    md: null
+  }),
+  computed: {
+    // 使用 computed 才能在动态绑定时动态更新
+    html: function () {
+      let res = this.md.render(this.content)
+      // 使用正则表达式将站内链接替换为 router-link 标签, 注意排除锚点跳转的
+      res = res.replace(
+        /<a href="(?!http:\/\/|https:\/\/)([^#]*?)">(.*?)<\/a>/g,
+        '<router-link to="$1">$2</router-link>'
+      )
+      // 使用正则表达式将站外链接在新窗口中打开
+      res = res.replace(/<a href="(.*?)">(.*?)<\/a>/g, '<a href="$1" target="_blank">$2</a>')
+      return {
+        template: '<div>' + res + '</div>'
+      }
+    }
+  },
+  created () {
+    this.md = new MarkdownIt()
+    this.md.use(hljs).use(latex).use(emoji).user(anchor).use(toc)
+  }
+}
+</script>
